@@ -13,6 +13,9 @@ PRINT_FREQ: 500
 
 DATASET:
   COLOR_RGB: True
+  ORI_IMAGE_SIZE:
+  - 1296
+  - 792
   TRAIN_DATASET: 'demo'
   TEST_DATASET: 'demo'
   DATA_FORMAT: png

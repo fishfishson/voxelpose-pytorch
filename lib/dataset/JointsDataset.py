@@ -35,6 +35,7 @@ class JointsDataset(Dataset):
         self.root_id = cfg.DATASET.ROOTIDX
         self.image_set = image_set
         self.dataset_name = cfg.DATASET.TEST_DATASET
+        self.ori_image_size = np.array(cfg.DATASET.ORI_IMAGE_SIZE)
 
         self.data_format = cfg.DATASET.DATA_FORMAT
         self.data_augmentation = cfg.DATASET.DATA_AUGMENTATION

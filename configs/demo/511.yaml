@@ -13,12 +13,15 @@ PRINT_FREQ: 500
 
 DATASET:
   COLOR_RGB: True
+  ORI_IMAGE_SIZE:
+  - 1024
+  - 1024
   TRAIN_DATASET: 'demo'
   TEST_DATASET: 'demo'
-  DATA_FORMAT: png
+  DATA_FORMAT: jpg
   DATA_AUGMENTATION: False
   FLIP: False
-  ROOT: 'data/ZJUMocap-511/' # 'data/panoptic/'
+  ROOT: 'data/ZJUMocap-511_easymocap/' # 'data/panoptic/'
   ROT_FACTOR: 45
   SCALE_FACTOR: 0.35
   TEST_SUBSET: 'demo'
@@ -31,10 +34,10 @@ NETWORK:
   TARGET_TYPE: gaussian
   IMAGE_SIZE:
   - 512
-  - 384
+  - 512
   HEATMAP_SIZE:
   - 128
-  - 96
+  - 128
   SIGMA: 3
   NUM_JOINTS: 15
   USE_GT: False
