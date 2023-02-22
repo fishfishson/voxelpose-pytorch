@@ -279,7 +279,7 @@ def save_debug_3d_cubes(config, meta, root, prefix):
         plt.close(0)
 
 
-def save_debug_3d_json(config, meta, preds, output_dir, vis=False):
+def save_debug_3d_json(config, meta, preds, centers, output_dir, vis=False):
     output = os.path.join(output_dir, 'blenderfig')
     os.makedirs(output, exist_ok=True) 
     if vis:
@@ -294,11 +294,15 @@ def save_debug_3d_json(config, meta, preds, output_dir, vis=False):
         gt_vis = gt_vis[:num_person]
         pred = preds[b].copy()
         pred = pred[pred[:, 0, 3] >= 0]
+        center = centers[b].copy()
+        center = center[center[:, 3] >= 0]
         data = {
             'gt': np.concatenate(
                 [gt / 1000., np.ones_like(gt[..., :1])], axis=-1),
             'pred': np.concatenate(
-                [pred[..., :3] / 1000., pred[..., 3:]], axis=-1)
+                [pred[..., :3] / 1000., pred[..., 3:]], axis=-1),
+            'center': np.concatenate(
+                [center[..., :3] / 1000., center[..., 3:]], axis=-1),
         }
         key = meta['key'][b].split('_')
         name = '_'.join([key[0], key[1], key[-1]]) + '.json'
@@ -334,3 +338,28 @@ def save_debug_3d_json(config, meta, preds, output_dir, vis=False):
                                 markeredgewidth=1)
             plt.savefig(name.replace('json', 'jpg'))
             plt.close(0)
+
+def save_demo_3d_json(config, meta, preds, centers, output_dir):
+    output = os.path.join(output_dir, 'blenderfig')
+    os.makedirs(output, exist_ok=True) 
+    for b in range(preds.shape[0]):
+        gt = meta['joints_3d'][b].float().numpy()
+        gt_vis = meta['joints_3d_vis'][b].float().numpy()
+        num_person = meta['num_person'][b]
+        gt = gt[:num_person]
+        gt_vis = gt_vis[:num_person]
+        pred = preds[b].copy()
+        pred = pred[pred[:, 0, 3] >= 0]
+        center = centers[b].copy()
+        center = center[center[:, 3] >= 0]
+        data = {
+            'gt': np.concatenate(
+                [gt / 1000., np.ones_like(gt[..., :1])], axis=-1),
+            'pred': np.concatenate(
+                [pred[..., :3] / 1000., pred[..., 3:]], axis=-1),
+            'center': np.concatenate(
+                [center[..., :3] / 1000., center[..., 3:]], axis=-1),
+        }
+        name = meta['key'][0].split('_')[-1] + '.json'
+        name = os.path.join(output, name)
+        save_numpy_dict(name, data)

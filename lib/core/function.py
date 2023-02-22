@@ -131,19 +131,22 @@ def validate_3d(config, model, loader, output_dir, epoch=None):
     model.eval()
 
     preds = []
+    grid_centers = []
     with torch.no_grad():
         end = time.time()
         for i, (inputs, targets_2d, weights_2d, targets_3d, meta, input_heatmap) in tqdm(enumerate(loader)):
             data_time.update(time.time() - end)
             if 'panoptic' in config.DATASET.TEST_DATASET or 'chi3d' in config.DATASET.TEST_DATASET:
-                pred, heatmaps, grid_centers, _, _, _ = model(views=inputs, meta=meta, targets_2d=targets_2d,
-                                                              weights_2d=weights_2d, targets_3d=targets_3d[0])
+                pred, heatmap, grid_center, _, _, _ = model(views=inputs, meta=meta, targets_2d=targets_2d,
+                                                            weights_2d=weights_2d, targets_3d=targets_3d[0])
             elif 'campus' in config.DATASET.TEST_DATASET or 'shelf' in config.DATASET.TEST_DATASET:
-                pred, heatmaps, grid_centers, _, _, _ = model(meta=meta, targets_3d=targets_3d[0],
-                                                              input_heatmaps=input_heatmap)
+                pred, heatmap, grid_center, _, _, _ = model(meta=meta, targets_3d=targets_3d[0],
+                                                            input_heatmaps=input_heatmap)
             pred = pred.detach().cpu().numpy()
+            grid_center = grid_center.detach().cpu().numpy()
             for b in range(pred.shape[0]):
                 preds.append(pred[b])
+                grid_centers.append(grid_center[b])
 
             batch_time.update(time.time() - end)
             end = time.time()
@@ -165,7 +168,7 @@ def validate_3d(config, model, loader, output_dir, epoch=None):
                     imgs = []
                     for k in range(len(inputs)):
                         hm_gt = save_batch_heatmaps_multi(inputs[k][b:b+1], targets_2d[k][b:b+1], None)
-                        hm_pred = save_batch_heatmaps_multi(inputs[k][b:b+1], heatmaps[k][b:b+1], None)
+                        hm_pred = save_batch_heatmaps_multi(inputs[k][b:b+1], heatmap[k][b:b+1], None)
                         img = np.vstack([hm_gt, hm_pred])
                         imgs.append(img)
                     imgs = np.vstack(imgs)
@@ -181,17 +184,18 @@ def validate_3d(config, model, loader, output_dir, epoch=None):
                     if not os.path.exists(dirname1):
                         os.makedirs(dirname1)
                     cv2.imwrite(os.path.join(dirname1, basename) + '.jpg', imgs)
-                save_debug_3d_cubes(config, meta[0], grid_centers, prefix)
+                # save_debug_3d_cubes(config, meta[0], grid_center, prefix)
                 save_debug_3d_images(config, meta[0], pred, prefix)
             
             if epoch is not None:
                 pass
             else:
-                key = meta[0]['key'][0].split('_')
-                if 'Hug' in key[1]:
-                    save_debug_3d_json(config, meta[0], pred, output_dir, vis=True)
-                else:
-                    save_debug_3d_json(config, meta[0], pred, output_dir, vis=False)
+                # key = meta[0]['key'][0].split('_')
+                # if 'Hug' in key[1]:
+                #     save_debug_3d_json(config, meta[0], pred, output_dir, vis=True)
+                # else:
+                #     save_debug_3d_json(config, meta[0], pred, output_dir, vis=False)
+                save_debug_3d_json(config, meta[0], pred, grid_center, output_dir, vis=False)
             
     metric = None
     if 'panoptic' in config.DATASET.TEST_DATASET or 'chi3d' in config.DATASET.TEST_DATASET:
@@ -214,6 +218,22 @@ def validate_3d(config, model, loader, output_dir, epoch=None):
 
     return metric
 
+def demo_3d(config, model, loader, output_dir, epoch=None):
+    model.eval()
+
+    preds = []
+    grid_centers = []
+    with torch.no_grad():
+        for i, (inputs, targets_2d, weights_2d, targets_3d, meta, input_heatmap) in tqdm(enumerate(loader)):
+            pred, heatmap, grid_center, _, _, _ = model(views=inputs, meta=meta, targets_2d=targets_2d,
+                                                        weights_2d=weights_2d, targets_3d=targets_3d[0])
+            pred = pred.detach().cpu().numpy()
+            grid_center = grid_center.detach().cpu().numpy()
+            for b in range(pred.shape[0]):
+                preds.append(pred[b])
+                grid_centers.append(grid_center[b])
+            
+            save_demo_3d_json(config, meta[0], pred, grid_center, output_dir)
 
 def speed_3d(config, model, loader, output_dir, epoch=None):
     full_time_metric = AverageMeter()
@@ -224,7 +244,7 @@ def speed_3d(config, model, loader, output_dir, epoch=None):
         for i, (inputs, targets_2d, weights_2d, targets_3d, meta, input_heatmap) in tqdm(enumerate(loader)):
             if 'panoptic' in config.DATASET.TEST_DATASET or 'chi3d' in config.DATASET.TEST_DATASET:
                 pred, full_time, pose_time = model(views=inputs, meta=meta, targets_2d=targets_2d,
-                             weights_2d=weights_2d, targets_3d=targets_3d[0], test_time=True)
+                                                   weights_2d=weights_2d, targets_3d=targets_3d[0], test_time=True)
             elif 'campus' in config.DATASET.TEST_DATASET or 'shelf' in config.DATASET.TEST_DATASET:
                 pred = model(meta=meta, targets_3d=targets_3d[0], input_heatmaps=input_heatmap, test_time=True)
             pred = pred.detach().cpu().numpy()
