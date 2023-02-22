@@ -32,7 +32,8 @@ def create_logger(cfg, cfg_name, phase='train'):
     model, _ = get_model_name(cfg)
     cfg_name = os.path.basename(cfg_name).split('.')[0]
 
-    final_output_dir = root_output_dir / dataset / model / cfg_name
+    # final_output_dir = root_output_dir / dataset / model / '_'.join([cfg_name, time_str])
+    final_output_dir = root_output_dir / dataset / model / '_'.join([cfg_name])
 
     print('=> creating {}'.format(final_output_dir))
     final_output_dir.mkdir(parents=True, exist_ok=True)
@@ -48,12 +49,12 @@ def create_logger(cfg, cfg_name, phase='train'):
     console = logging.StreamHandler()
     logging.getLogger('').addHandler(console)
 
-    tensorboard_log_dir = tensorboard_log_dir / dataset / model / \
-        (cfg_name + time_str)
-    print('=> creating {}'.format(tensorboard_log_dir))
-    tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
+    # tensorboard_log_dir = tensorboard_log_dir / dataset / model / \
+    #     (cfg_name + '_' + time_str)
+    # print('=> creating {}'.format(tensorboard_log_dir))
+    # tensorboard_log_dir.mkdir(parents=True, exist_ok=True)
 
-    return logger, str(final_output_dir), str(tensorboard_log_dir)
+    return logger, str(final_output_dir), str(final_output_dir)
 
 def get_optimizer(cfg, model):
     optimizer = None
@@ -141,6 +142,6 @@ def load_backbone_panoptic(model, pretrained_file):
 
             new_pretrained_state_dict[k.replace(prefix, "")] = o
     logging.info("load backbone statedict from {}".format(pretrained_file))
-    model.module.backbone.load_state_dict(new_pretrained_state_dict)
+    model.module.backbone.load_state_dict(new_pretrained_state_dict, strict=True)
 
     return model

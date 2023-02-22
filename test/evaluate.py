@@ -84,7 +84,7 @@ def main():
     preds = []
     with torch.no_grad():
         for i, (inputs, targets_2d, weights_2d, targets_3d, meta, input_heatmap) in enumerate(tqdm(test_loader)):
-            if 'panoptic' in config.DATASET.TEST_DATASET:
+            if 'panoptic' in config.DATASET.TEST_DATASET or 'chi3d' in config.DATASET.TEST_DATASET: 
                 pred, _, _, _, _, _ = model(views=inputs, meta=meta)
             elif 'campus' in config.DATASET.TEST_DATASET or 'shelf' in config.DATASET.TEST_DATASET:
                 pred, _, _, _, _, _ = model(meta=meta, input_heatmaps=input_heatmap)
@@ -94,7 +94,7 @@ def main():
                 preds.append(pred[b])
 
         tb = PrettyTable()
-        if 'panoptic' in config.DATASET.TEST_DATASET:
+        if 'panoptic' in config.DATASET.TEST_DATASET or 'chi3d' in config.DATASET.TEST_DATASET:
             mpjpe_threshold = np.arange(25, 155, 25)
             aps, recs, mpjpe, _ = test_dataset.evaluate(preds)
             tb.field_names = ['Threshold/mm'] + [f'{i}' for i in mpjpe_threshold]

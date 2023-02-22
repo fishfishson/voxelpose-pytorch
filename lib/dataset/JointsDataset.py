@@ -173,7 +173,8 @@ class JointsDataset(Dataset):
             'center': c,
             'scale': s,
             'rotation': r,
-            'camera': db_rec['camera']
+            'camera': db_rec['camera'],
+            'key': db_rec['key']
         }
 
         return input, target_heatmap, target_weight, target_3d, meta, input_heatmap

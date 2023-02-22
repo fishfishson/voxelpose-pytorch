@@ -18,6 +18,8 @@ import copy
 
 from dataset.JointsDataset import JointsDataset
 from utils.transforms import projectPoints
+from utils.rays import get_rays, get_ray_directions
+import trimesh
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +33,10 @@ TRAIN_LIST = [
     '160906_ian3',
     '160906_band1',
     '160906_band2',
-    '160906_band3',
+    # '160906_band3',
 ]
 VAL_LIST = ['160906_pizza1', '160422_haggling1', '160906_ian5', '160906_band4']
+DEBUG = False
 
 JOINTS_DEF = {
     'neck': 0,
@@ -133,6 +136,9 @@ class Panoptic(JointsDataset):
                     if len(bodies) == 0:
                         continue
 
+                    if DEBUG:
+                        pts_out = []
+
                     for k, v in cameras.items():
                         postfix = osp.basename(file).replace('body3DScene', '')
                         prefix = '{:02d}_{:02d}'.format(k[0], k[1])
@@ -200,10 +206,49 @@ class Panoptic(JointsDataset):
                                 'joints_2d_vis': all_poses_vis,
                                 'camera': our_cam
                             })
+                        
+                            if DEBUG and (len(all_poses_3d) > 1):
+                                H = height
+                                W = width
+                                dirs = get_ray_directions(
+                                    W, H, our_cam['fx'], our_cam['fy'], our_cam['cx'], our_cam['cy'], mode='OPENCV')
+                                c2w = np.concatenate([our_cam['R'].T, our_cam['T']], axis=1)
+                                rays_o, rays_d = get_rays(dirs, c2w, keepdim=True)
+                                rays_o = rays_o[None]
+                                rays_d = rays_d[None]
+                                z_vals = 1000.0 * np.linspace(0, 1, 32)
+                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,0,0][..., None, :])
+                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 1.0 0.0' for l in ray_pts.view(-1, 3).tolist()]))
+                                pts_out.append(ray_pts)
+
+                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,H-1,0][..., None, :])
+                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 0.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
+                                pts_out.append(ray_pts)
+
+                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,0,W-1][..., None, :])
+                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 1.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
+                                pts_out.append(ray_pts)
+
+                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,H-1,W-1][..., None, :])
+                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 1.0 1.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
+                                pts_out.append(ray_pts)
+                    
+                    if DEBUG:
+                        if len(pts_out) > 0:
+                            pts_out = np.stack(pts_out).reshape(-1, 3)
+                            col_out = np.zeros_like(pts_out)
+                            col_out[:, 0] = 1
+                            pts_out = trimesh.PointCloud(pts_out, colors=col_out)
+                            pts_out.export('panoptic_cam.ply')
+                            poses_3d = np.stack(all_poses_3d).reshape(-1, 3)
+                            pts3d = trimesh.PointCloud(vertices=poses_3d)
+                            pts3d.export('panoptic_pts3d.ply')
+                            exit()
         return db
 
     def _get_cam(self, seq):
-        cam_file = osp.join(self.dataset_root, seq, 'calibration_{:s}.json'.format(seq))
+        # cam_file = osp.join(self.dataset_root, seq, 'calibration_{:s}.json'.format(seq))
+        cam_file = osp.join(self.dataset_root, seq, 'calibration.json'.format(seq))
         with open(cam_file) as cfile:
             calib = json.load(cfile)
 

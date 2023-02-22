@@ -47,7 +47,10 @@ def get_optimizer(model):
     lr = config.TRAIN.LR
     if model.module.backbone is not None:
         for params in model.module.backbone.parameters():
-            params.requires_grad = False   # If you want to train the whole model jointly, set it to be True.
+            if config.FINETUNE_BACKBONE:
+                params.requires_grad = True
+            else:
+                params.requires_grad = False # If you want to train the whole model jointly, set it to be True.
     for params in model.module.root_net.parameters():
         params.requires_grad = True
     for params in model.module.pose_net.parameters():
@@ -115,8 +118,10 @@ def main():
 
     best_precision = 0
     if config.NETWORK.PRETRAINED_BACKBONE:
+        print(f'LOAD PRETRAINED BACKBONE FROM: {config.NETWORK.PRETRAINED_BACKBONE}')
         model = load_backbone_panoptic(model, config.NETWORK.PRETRAINED_BACKBONE)
     if config.TRAIN.RESUME:
+        print(f'RESUME MODEL FROM: {final_output_dir}')
         start_epoch, model, optimizer, best_precision = load_checkpoint(model, optimizer, final_output_dir)
 
     writer_dict = {
@@ -130,8 +135,8 @@ def main():
         print('Epoch: {}'.format(epoch))
 
         # lr_scheduler.step()
-        train_3d(config, model, optimizer, train_loader, epoch, final_output_dir, writer_dict)
-        precision = validate_3d(config, model, test_loader, final_output_dir)
+        train_3d(config, model, optimizer, train_loader, epoch, final_output_dir, writer_dict, finetune_backbone=config.FINETUNE_BACKBONE)
+        precision = validate_3d(config, model, test_loader, final_output_dir, epoch=epoch)
 
         if precision > best_precision:
             best_precision = precision
@@ -145,7 +150,7 @@ def main():
             'state_dict': model.module.state_dict(),
             'precision': best_precision,
             'optimizer': optimizer.state_dict(),
-        }, best_model, final_output_dir)
+        }, best_model, final_output_dir, 'checkpoint_{:03}.pth.tar'.format(epoch))
 
     final_model_state_file = os.path.join(final_output_dir,
                                           'final_state.pth.tar')

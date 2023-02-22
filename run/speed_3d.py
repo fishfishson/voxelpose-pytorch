@@ -24,7 +24,7 @@ import json
 import _init_paths
 from core.config import config
 from core.config import update_config
-from core.function import train_3d, validate_3d
+from core.function import train_3d, validate_3d, speed_3d
 from utils.utils import create_logger
 from utils.utils import save_checkpoint, load_checkpoint, load_model_state
 from utils.utils import load_backbone_panoptic
@@ -46,9 +46,9 @@ def parse_args():
 def main():
     args = parse_args()
     logger, final_output_dir, tb_log_dir = create_logger(
-        config, args.cfg, 'validate')
+        config, args.cfg, 'speed')
     config.GPUS = '0'
-    config.DATASET.ROOT = 'data/chi3d_s03'
+    config.DATASET.ROOT = 'data/chi3d_s04/'
     config.DATASET.TEST_SUBSET = 'test'
     config.DATASET.TRAIN_SUBSET = 'test'
     # config.TEST.MODEL_FILE = 'final_state.pth.tar'
@@ -89,9 +89,9 @@ def main():
         logger.info('=> load models state {}'.format(test_model_file))
         model.module.load_state_dict(torch.load(test_model_file))
     else:
-        raise ValueError('Check the model file for testing!')
+        raise ValueError('Check the model file for speeding!')
 
-    validate_3d(config, model, test_loader, final_output_dir)
+    speed_3d(config, model, test_loader, final_output_dir)
 
 
 if __name__ == '__main__':

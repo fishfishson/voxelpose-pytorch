@@ -7,6 +7,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import time
 import torch
 import torch.nn as nn
 
@@ -31,7 +32,9 @@ class MultiPersonPoseNet(nn.Module):
         self.root_id = cfg.DATASET.ROOTIDX
         self.dataset_name = cfg.DATASET.TEST_DATASET
 
-    def forward(self, views=None, meta=None, targets_2d=None, weights_2d=None, targets_3d=None, input_heatmaps=None):
+    def forward(self, views=None, meta=None, targets_2d=None, weights_2d=None, targets_3d=None, input_heatmaps=None, test_time=False):
+        if test_time:
+            start_0 = time.time()
         if views is not None:
             all_heatmaps = []
             for view in views:
@@ -39,20 +42,23 @@ class MultiPersonPoseNet(nn.Module):
                 all_heatmaps.append(heatmaps)
         else:
             all_heatmaps = input_heatmaps
+        
+        if test_time:
+            start_1 = time.time()
 
         # all_heatmaps = targets_2d
         device = all_heatmaps[0].device
         batch_size = all_heatmaps[0].shape[0]
 
-        # calculate 2D heatmap loss
-        criterion = PerJointMSELoss().cuda()
-        loss_2d = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
-        if targets_2d is not None:
-            for t, w, o in zip(targets_2d, weights_2d, all_heatmaps):
-                loss_2d += criterion(o, t, True, w)
-            loss_2d /= len(all_heatmaps)
+        if not test_time:
+            # calculate 2D heatmap loss
+            criterion = PerJointMSELoss().cuda()
+            loss_2d = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
+            if targets_2d is not None:
+                for t, w, o in zip(targets_2d, weights_2d, all_heatmaps):
+                    loss_2d += criterion(o, t, True, w)
+                loss_2d /= len(all_heatmaps)
 
-        loss_3d = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
         if self.USE_GT:
             num_person = meta[0]['num_person']
             grid_centers = torch.zeros(batch_size, self.num_cand, 5, device=device)
@@ -64,6 +70,8 @@ class MultiPersonPoseNet(nn.Module):
         else:
             root_cubes, grid_centers = self.root_net(all_heatmaps, meta)
 
+        if not self.USE_GT and not test_time:
+            loss_3d = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
             # calculate 3D heatmap loss
             if targets_3d is not None:
                 loss_3d = criterion(root_cubes, targets_3d)
@@ -72,9 +80,10 @@ class MultiPersonPoseNet(nn.Module):
         pred = torch.zeros(batch_size, self.num_cand, self.num_joints, 5, device=device)
         pred[:, :, :, 3:] = grid_centers[:, :, 3:].reshape(batch_size, -1, 1, 2)  # matched gt
 
-        loss_cord = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
-        criterion_cord = PerJointL1Loss().cuda()
-        count = 0
+        if not test_time:
+            loss_cord = criterion(torch.zeros(1, device=device), torch.zeros(1, device=device))
+            criterion_cord = PerJointL1Loss().cuda()
+            count = 0
 
         for n in range(self.num_cand):
             index = (pred[:, n, 0, 3] >= 0)
@@ -83,7 +92,7 @@ class MultiPersonPoseNet(nn.Module):
                 pred[:, n, :, 0:3] = single_pose.detach()
 
                 # calculate 3D pose loss
-                if self.training and 'joints_3d' in meta[0] and 'joints_3d_vis' in meta[0]:
+                if self.training and 'joints_3d' in meta[0] and 'joints_3d_vis' in meta[0] and not test_time:
                     gt_3d = meta[0]['joints_3d'].float()
                     for i in range(batch_size):
                         if pred[i, n, 0, 3] >= 0:
@@ -94,7 +103,13 @@ class MultiPersonPoseNet(nn.Module):
                                          criterion_cord(single_pose[i:i + 1], targets, True, weights_3d)) / count
                 del single_pose
 
-        return pred, all_heatmaps, grid_centers, loss_2d, loss_3d, loss_cord
+        if not test_time:
+            return pred, all_heatmaps, grid_centers, loss_2d, loss_3d, loss_cord
+        else:
+            end_time = time.time()
+            full_time = end_time - start_0
+            pose_time = end_time - start_1
+            return pred, full_time, pose_time
 
 
 def get_multi_person_pose_net(cfg, is_train=True):
