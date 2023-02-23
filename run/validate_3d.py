@@ -36,7 +36,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Train keypoints network')
     parser.add_argument(
         '--cfg', help='experiment configure file name', required=True, type=str)
-
+    parser.add_argument('--ckpt', type=str, required=True)
     args, rest = parser.parse_known_args()
     update_config(args.cfg)
 
@@ -84,10 +84,10 @@ def main():
     with torch.no_grad():
         model = torch.nn.DataParallel(model, device_ids=gpus).cuda()
 
-    test_model_file = os.path.join(final_output_dir, config.TEST.MODEL_FILE)
-    if config.TEST.MODEL_FILE and os.path.isfile(test_model_file):
-        logger.info('=> load models state {}'.format(test_model_file))
-        model.module.load_state_dict(torch.load(test_model_file))
+    # test_model_file = os.path.join(final_output_dir, config.TEST.MODEL_FILE)
+    if config.TEST.MODEL_FILE and os.path.isfile(args.ckpt):
+        logger.info('=> load models state {}'.format(args.ckpt))
+        model.module.load_state_dict(torch.load(args.ckpt))
     else:
         raise ValueError('Check the model file for testing!')
 

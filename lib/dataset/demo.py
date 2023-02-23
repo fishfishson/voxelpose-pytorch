@@ -75,7 +75,10 @@ class DEMO(JointsDataset):
         assert self.image_set == 'demo'
         # self.sequence_list = TRAIN_LIST
         self.sequence_list = ['demo']
-        self.cam_list = ['01','02','03','04']
+        if cfg.DATASET.CAM_LIST is None:
+            self.cam_list = ['01','02','03','04']
+        else:
+            self.cam_list = cfg.DATASET.CAM_LIST.split(' ')
         self._interval = 1
         
         self.db_file = 'voxelpose_{}_cam{}.pkl'.format(self.image_set, self.num_views)

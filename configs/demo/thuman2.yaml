@@ -6,23 +6,23 @@ BACKBONE_MODEL: 'pose_resnet'
 MODEL: 'multi_person_posenet'
 DATA_DIR: ''
 GPUS: '0'
-OUTPUT_DIR: 'output/511'
-LOG_DIR: 'output/511'
+OUTPUT_DIR: 'output/thuman2'
+LOG_DIR: 'output/thuman2'
 WORKERS: 8
 PRINT_FREQ: 500
 
 DATASET:
   COLOR_RGB: True
   ORI_IMAGE_SIZE:
-  - 1024
-  - 1024
-  CAM_LIST: "01 07 13 19"
+  - 900
+  - 900
+  CAM_LIST: '50591643  58860488  60457274  65906101'
   TRAIN_DATASET: 'demo'
   TEST_DATASET: 'demo'
   DATA_FORMAT: jpg
   DATA_AUGMENTATION: False
   FLIP: False
-  ROOT: 'data/ZJUMocap-511_easymocap/' # 'data/panoptic/'
+  ROOT: 'data/thuman-chi3d/' # 'data/panoptic/'
   ROT_FACTOR: 45
   SCALE_FACTOR: 0.35
   TEST_SUBSET: 'demo'

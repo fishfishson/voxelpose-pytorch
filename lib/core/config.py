@@ -98,6 +98,8 @@ config.LOSS.USE_DIFFERENT_JOINTS_WEIGHT = False
 # DATASET related params
 config.DATASET = edict()
 config.DATASET.ROOT = '../data/h36m/'
+config.DATASET.ORI_IMAGE_SIZE = []
+config.DATASET.CAM_LIST = None
 config.DATASET.TRAIN_DATASET = 'mixed_dataset'
 config.DATASET.TEST_DATASET = 'multi_view_h36m'
 config.DATASET.TRAIN_SUBSET = 'train'
