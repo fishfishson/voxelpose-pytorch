@@ -23,9 +23,6 @@ from easymocap.mytools.file_utils import save_numpy_dict
 
 logger = logging.getLogger(__name__)
 
-TRAIN_LIST = ['s02', 's04']
-VAL_LIST = ['s03']
-TEST_LIST = ['s03']
 DEBUG = False
 
 body25topanoptic15 = [1,0,8,5,6,7,12,13,14,2,3,4,9,10,11]
@@ -83,15 +80,18 @@ class CHI3D(JointsDataset):
         seqs = os.listdir(self.dataset_root)
         if self.image_set == 'train':
             # self.sequence_list = TRAIN_LIST
-            self.sequence_list = [x for x in seqs if x[:3] in TRAIN_LIST]
-            self._interval = interval
+            sequence_list = self.train_list
         elif self.image_set == 'validation':
-            self.sequence_list = [x for x in seqs if x[:3] in VAL_LIST]
-            self._interval = interval
+            sequence_list = self.val_list
         elif self.image_set == 'test':
-            self.sequence_list = [x for x in seqs if x[:3] in TEST_LIST]
-            self._interval = interval
-        
+            sequence_list = self.test_list
+        self.sequence_list = []
+        for x in sequence_list:
+            for seq in seqs:
+                if x in seq:
+                    self.sequence_list.append(seq)
+        self._interval = interval
+
         self.db_file = 'voxelpose_{}_cam{}.pkl'.format(self.image_set, self.num_views)
         self.db_file = os.path.join(self.dataset_root, self.db_file)
 
@@ -102,6 +102,7 @@ class CHI3D(JointsDataset):
             assert info['joint_type'] == self.joint_type
             self.db = info['db']
         else:
+            print(self.sequence_list)
             self.db = self._get_db()
             info = {
                 'sequence_list': self.sequence_list,
@@ -131,8 +132,8 @@ class CHI3D(JointsDataset):
                     if len(bodies) == 0:
                         continue
 
-                    if DEBUG:
-                        pts_out = []
+                    # if DEBUG:
+                    #     pts_out = []
                         
                     for k, v in cameras.items():
                         # postfix = osp.basename(file).replace('body3DScene', '')
@@ -145,7 +146,10 @@ class CHI3D(JointsDataset):
                         all_poses = []
                         all_poses_vis = []
                         for body in bodies:
-                            pose3d = np.array(body['keypoints3d']).reshape((-1, 3))
+                            pose3d = np.array(body['keypoints3d'])
+                            if pose3d.shape[-1] == 4:
+                                pose3d = pose3d[..., :3]
+                            pose3d = pose3d.reshape(-1, 3)
                             if self.joint_type == 'body25':
                                 pose3d = pose3d[body25topanoptic15]
                             pose3d = pose3d[:self.num_joints]
@@ -206,43 +210,43 @@ class CHI3D(JointsDataset):
                                 'camera': our_cam
                             })
                         
-                            if DEBUG:
-                                H = height
-                                W = width
-                                dirs = get_ray_directions(
-                                    W, H, our_cam['fx'], our_cam['fy'], our_cam['cx'], our_cam['cy'], mode='OPENCV')
-                                c2w = np.concatenate([our_cam['R'].T, our_cam['T']], axis=1)
-                                rays_o, rays_d = get_rays(dirs, c2w, keepdim=True)
-                                rays_o = rays_o[None]
-                                rays_d = rays_d[None]
-                                z_vals = 1000.0 * np.linspace(0, 1, 32)
-                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,0,0][..., None, :])
-                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 1.0 0.0' for l in ray_pts.view(-1, 3).tolist()]))
-                                pts_out.append(ray_pts)
+                    #         if DEBUG:
+                    #             H = height
+                    #             W = width
+                    #             dirs = get_ray_directions(
+                    #                 W, H, our_cam['fx'], our_cam['fy'], our_cam['cx'], our_cam['cy'], mode='OPENCV')
+                    #             c2w = np.concatenate([our_cam['R'].T, our_cam['T']], axis=1)
+                    #             rays_o, rays_d = get_rays(dirs, c2w, keepdim=True)
+                    #             rays_o = rays_o[None]
+                    #             rays_d = rays_d[None]
+                    #             z_vals = 1000.0 * np.linspace(0, 1, 32)
+                    #             ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,0,0][..., None, :])
+                    #             # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 1.0 0.0' for l in ray_pts.view(-1, 3).tolist()]))
+                    #             pts_out.append(ray_pts)
 
-                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,H-1,0][..., None, :])
-                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 0.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
-                                pts_out.append(ray_pts)
+                    #             ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,H-1,0][..., None, :])
+                    #             # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 0.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
+                    #             pts_out.append(ray_pts)
 
-                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,0,W-1][..., None, :])
-                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 1.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
-                                pts_out.append(ray_pts)
+                    #             ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,0,W-1][..., None, :])
+                    #             # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 0.0 1.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
+                    #             pts_out.append(ray_pts)
 
-                                ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,H-1,W-1][..., None, :])
-                                # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 1.0 1.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
-                                pts_out.append(ray_pts)
+                    #             ray_pts = (rays_o[:,0,0][..., None, :] + z_vals[..., None] * rays_d[:,H-1,W-1][..., None, :])
+                    #             # pts_out.append('\n'.join([' '.join([str(p) for p in l]) + ' 1.0 1.0 1.0' for l in ray_pts.view(-1, 3).tolist()]))
+                    #             pts_out.append(ray_pts)
 
-                    if DEBUG:
-                        if len(pts_out) > 0:
-                            pts_out = np.stack(pts_out).reshape(-1, 3)
-                            col_out = np.zeros_like(pts_out)
-                            col_out[:, 0] = 1
-                            pts_out = trimesh.PointCloud(pts_out, colors=col_out)
-                            pts_out.export('chi3d_cam.ply')
-                            poses_3d = np.stack(all_poses_3d).reshape(-1, 3)
-                            pts3d = trimesh.PointCloud(vertices=poses_3d)
-                            pts3d.export('chi3d_pts3d.ply')
-                            exit()
+                    # if DEBUG:
+                    #     if len(pts_out) > 0:
+                    #         pts_out = np.stack(pts_out).reshape(-1, 3)
+                    #         col_out = np.zeros_like(pts_out)
+                    #         col_out[:, 0] = 1
+                    #         pts_out = trimesh.PointCloud(pts_out, colors=col_out)
+                    #         pts_out.export('chi3d_cam.ply')
+                    #         poses_3d = np.stack(all_poses_3d).reshape(-1, 3)
+                    #         pts3d = trimesh.PointCloud(vertices=poses_3d)
+                    #         pts3d.export('chi3d_pts3d.ply')
+                    #         exit()
         return db
     
     def _get_cam(self, seq):

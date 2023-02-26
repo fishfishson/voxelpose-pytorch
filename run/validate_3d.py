@@ -48,7 +48,6 @@ def main():
     logger, final_output_dir, tb_log_dir = create_logger(
         config, args.cfg, 'validate')
     config.GPUS = '0'
-    config.DATASET.ROOT = 'data/chi3d_s03'
     config.DATASET.TEST_SUBSET = 'test'
     config.DATASET.TRAIN_SUBSET = 'test'
     # config.TEST.MODEL_FILE = 'final_state.pth.tar'
