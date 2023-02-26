@@ -86,7 +86,12 @@ def main():
     # test_model_file = os.path.join(final_output_dir, config.TEST.MODEL_FILE)
     if config.TEST.MODEL_FILE and os.path.isfile(args.ckpt):
         logger.info('=> load models state {}'.format(args.ckpt))
-        model.module.load_state_dict(torch.load(args.ckpt))
+        ckpt = torch.load(args.ckpt)
+        if 'state_dict' in ckpt.keys():
+            state_dict = ckpt['state_dict']
+        else:
+            state_dict = ckpt
+        model.module.load_state_dict(state_dict, strict=True)
     else:
         raise ValueError('Check the model file for testing!')
 

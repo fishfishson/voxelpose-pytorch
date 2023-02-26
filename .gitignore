@@ -135,3 +135,4 @@ output/
 log/
 *.out
 debug/
+cache

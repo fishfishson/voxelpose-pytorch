@@ -34,6 +34,7 @@ class JointsDataset(Dataset):
         self.dataset_root = os.path.abspath(dataset_root)
         self.root_id = cfg.DATASET.ROOTIDX
         self.image_set = image_set
+        self.exp_name = cfg.OUTPUT_DIR.split('/')[-1]
         self.dataset_name = cfg.DATASET.TEST_DATASET
         self.ori_image_size = np.array(cfg.DATASET.ORI_IMAGE_SIZE)
         self.train_list = cfg.DATASET.TRAIN_LIST
