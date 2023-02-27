@@ -148,44 +148,44 @@ def validate_3d(config, model, loader, output_dir, epoch=None):
                 preds.append(pred[b])
                 grid_centers.append(grid_center[b])
 
-            batch_time.update(time.time() - end)
-            end = time.time()
-            if i % config.PRINT_FREQ == 0 or i == len(loader) - 1:
-                gpu_memory_usage = torch.cuda.memory_allocated(0)
-                msg = 'Test: [{0}/{1}]\t' \
-                      'Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
-                      'Speed: {speed:.1f} samples/s\t' \
-                      'Data: {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
-                      'Memory {memory:.1f}'.format(
-                        i, len(loader), batch_time=batch_time,
-                        speed=len(inputs) * inputs[0].size(0) / batch_time.val,
-                        data_time=data_time, memory=gpu_memory_usage)
-                logger.info(msg)
+            # batch_time.update(time.time() - end)
+            # end = time.time()
+            # if i % config.PRINT_FREQ == 0 or i == len(loader) - 1:
+            #     gpu_memory_usage = torch.cuda.memory_allocated(0)
+            #     msg = 'Test: [{0}/{1}]\t' \
+            #           'Time: {batch_time.val:.3f}s ({batch_time.avg:.3f}s)\t' \
+            #           'Speed: {speed:.1f} samples/s\t' \
+            #           'Data: {data_time.val:.3f}s ({data_time.avg:.3f}s)\t' \
+            #           'Memory {memory:.1f}'.format(
+            #             i, len(loader), batch_time=batch_time,
+            #             speed=len(inputs) * inputs[0].size(0) / batch_time.val,
+            #             data_time=data_time, memory=gpu_memory_usage)
+            #     logger.info(msg)
 
-                seqs = meta[0]['key']
-                for b in range(len(seqs)):
-                    seq = seqs[b].split('_')
-                    imgs = []
-                    for k in range(len(inputs)):
-                        hm_gt = save_batch_heatmaps_multi(inputs[k][b:b+1], targets_2d[k][b:b+1], None)
-                        hm_pred = save_batch_heatmaps_multi(inputs[k][b:b+1], heatmap[k][b:b+1], None)
-                        img = np.vstack([hm_gt, hm_pred])
-                        imgs.append(img)
-                    imgs = np.vstack(imgs)
-                    if epoch is not None:
-                        prefix = '{}/{:03}_{}_{}_{}'.format(
-                            os.path.join(output_dir, 'validation'), epoch, seq[0], seq[1], seq[-1])
-                    else:
-                        prefix = '{}/val_{}_{}_{}'.format(
-                            os.path.join(output_dir, 'validation'), seq[0], seq[1], seq[-1])
-                    basename = os.path.basename(prefix)
-                    dirname = os.path.dirname(prefix)
-                    dirname1 = os.path.join(dirname, 'heatmaps')
-                    if not os.path.exists(dirname1):
-                        os.makedirs(dirname1)
-                    cv2.imwrite(os.path.join(dirname1, basename) + '.jpg', imgs)
-                # save_debug_3d_cubes(config, meta[0], grid_center, prefix)
-                save_debug_3d_images(config, meta[0], pred, prefix)
+            #     seqs = meta[0]['key']
+            #     for b in range(len(seqs)):
+            #         seq = seqs[b].split('_')
+            #         imgs = []
+            #         for k in range(len(inputs)):
+            #             hm_gt = save_batch_heatmaps_multi(inputs[k][b:b+1], targets_2d[k][b:b+1], None)
+            #             hm_pred = save_batch_heatmaps_multi(inputs[k][b:b+1], heatmap[k][b:b+1], None)
+            #             img = np.vstack([hm_gt, hm_pred])
+            #             imgs.append(img)
+            #         imgs = np.vstack(imgs)
+            #         if epoch is not None:
+            #             prefix = '{}/{:03}_{}_{}_{}'.format(
+            #                 os.path.join(output_dir, 'validation'), epoch, seq[0], seq[1], seq[-1])
+            #         else:
+            #             prefix = '{}/val_{}_{}_{}'.format(
+            #                 os.path.join(output_dir, 'validation'), seq[0], seq[1], seq[-1])
+            #         basename = os.path.basename(prefix)
+            #         dirname = os.path.dirname(prefix)
+            #         dirname1 = os.path.join(dirname, 'heatmaps')
+            #         if not os.path.exists(dirname1):
+            #             os.makedirs(dirname1)
+            #         cv2.imwrite(os.path.join(dirname1, basename) + '.jpg', imgs)
+            #     # save_debug_3d_cubes(config, meta[0], grid_center, prefix)
+            #     save_debug_3d_images(config, meta[0], pred, prefix)
             
             save_debug_3d_json(config, meta[0], pred, grid_center, output_dir, vis=False)
             

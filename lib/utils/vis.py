@@ -280,7 +280,7 @@ def save_debug_3d_cubes(config, meta, root, prefix):
 
 
 def save_debug_3d_json(config, meta, preds, centers, output_dir, vis=False):
-    output = os.path.join(output_dir, 'blenderfig')
+    output = os.path.join(output_dir)
     os.makedirs(output, exist_ok=True) 
     if vis:
         plt.figure(0, figsize=(4, 4))
