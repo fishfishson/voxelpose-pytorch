@@ -38,6 +38,8 @@ def parse_args():
         '--cfg', help='experiment configure file name', required=True, type=str)
     parser.add_argument(
         '--ckpt', help='ckpt', required=True, type=str)
+    parser.add_argument(
+        '--out', help='output', required=True, type=str)
     args, rest = parser.parse_known_args()
     update_config(args.cfg)
 
@@ -46,11 +48,14 @@ def parse_args():
 
 def main():
     args = parse_args()
-    logger, final_output_dir, tb_log_dir = create_logger(
-        config, args.cfg, 'demo')
-    # config.TEST.MODEL_FILE = 'final_state.pth.tar'
-    logger.info(pprint.pformat(args))
-    logger.info(pprint.pformat(config))
+    # logger, final_output_dir, tb_log_dir = create_logger(
+    #     config, args.cfg, 'demo')
+    config.GPUS = '0'
+    config.DATASET.TEST_SUBSET = 'test'
+    config.DATASET.TRAIN_SUBSET = 'test'
+    # # config.TEST.MODEL_FILE = 'final_state.pth.tar'
+    # logger.info(pprint.pformat(args))
+    # logger.info(pprint.pformat(config))
 
     gpus = [int(i) for i in config.GPUS.split(',')]
     print('=> Loading data ..')
@@ -82,12 +87,17 @@ def main():
         model = torch.nn.DataParallel(model, device_ids=gpus).cuda()
 
     if config.TEST.MODEL_FILE and os.path.isfile(args.ckpt):
-        logger.info('=> load models state {}'.format(args.ckpt))
-        model.module.load_state_dict(torch.load(args.ckpt))
+        print('=> load models state {}'.format(args.ckpt))
+        ckpt = torch.load(args.ckpt)
+        if 'state_dict' in ckpt:
+            state_dict = ckpt['state_dict']
+        else:
+            state_dict = ckpt
+        model.module.load_state_dict(state_dict, strict=True)
     else:
         raise ValueError('Check the model file for testing!')
 
-    demo_3d(config, model, test_loader, final_output_dir)
+    demo_3d(config, model, test_loader, args.out)
 
 
 if __name__ == '__main__':

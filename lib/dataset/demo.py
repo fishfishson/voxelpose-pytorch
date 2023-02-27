@@ -81,7 +81,8 @@ class DEMO(JointsDataset):
             self.cam_list = cfg.DATASET.CAM_LIST.split(' ')
         self._interval = 1
         
-        self.db_file = 'voxelpose_{}_cam{}.pkl'.format(self.image_set, self.num_views)
+        self.db_file = 'voxelpose_{}_cam{}_{}.pkl'.format(self.image_set, self.num_views, self.exp_name)
+        os.makedirs('./cache', exist_ok=True)
         self.db_file = os.path.join(self.dataset_root, self.db_file)
 
         if osp.exists(self.db_file):

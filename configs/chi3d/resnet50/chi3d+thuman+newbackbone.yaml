@@ -31,7 +31,7 @@ DATASET:
   VAL_LIST:
   - "s03_Hug"
   TEST_LIST:
-  - "s02_Hug"
+  - "s03"
   ORI_IMAGE_SIZE:
   - 900
   - 900

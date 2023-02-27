@@ -340,7 +340,7 @@ def save_debug_3d_json(config, meta, preds, centers, output_dir, vis=False):
             plt.close(0)
 
 def save_demo_3d_json(config, meta, preds, centers, output_dir):
-    output = os.path.join(output_dir, 'blenderfig')
+    output = os.path.join(output_dir)
     os.makedirs(output, exist_ok=True) 
     for b in range(preds.shape[0]):
         gt = meta['joints_3d'][b].float().numpy()

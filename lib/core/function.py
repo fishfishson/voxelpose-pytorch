@@ -187,15 +187,7 @@ def validate_3d(config, model, loader, output_dir, epoch=None):
                 # save_debug_3d_cubes(config, meta[0], grid_center, prefix)
                 save_debug_3d_images(config, meta[0], pred, prefix)
             
-            if epoch is not None:
-                pass
-            else:
-                # key = meta[0]['key'][0].split('_')
-                # if 'Hug' in key[1]:
-                #     save_debug_3d_json(config, meta[0], pred, output_dir, vis=True)
-                # else:
-                #     save_debug_3d_json(config, meta[0], pred, output_dir, vis=False)
-                save_debug_3d_json(config, meta[0], pred, grid_center, output_dir, vis=False)
+            save_debug_3d_json(config, meta[0], pred, grid_center, output_dir, vis=False)
             
     metric = None
     if 'panoptic' in config.DATASET.TEST_DATASET or 'chi3d' in config.DATASET.TEST_DATASET:
